@@ -1,13 +1,14 @@
 """
 Agent Orchestrator for TRIALPULSE NEXUS 10X
-Phase 5.2: LangGraph Agent Framework - FIXED
+Phase 5.2: LangGraph Agent Framework - FIXED v2
 
 Defines the LangGraph workflow that orchestrates all agents.
 """
 
 import sys
+import json
 from pathlib import Path
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Union
 import logging
 from datetime import datetime
 
@@ -24,6 +25,7 @@ from src.agents.state import (
 )
 from src.agents.base_agent import BaseAgent
 from src.agents.llm_wrapper import LLMWrapper, get_llm
+import numpy as np
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -31,18 +33,50 @@ logger = logging.getLogger(__name__)
 
 
 # ============================================================
+# HELPER: Convert numpy types to native Python types
+# ============================================================
+
+def to_native(obj):
+    """Convert numpy types to Python native types for serialization"""
+    if isinstance(obj, dict):
+        return {k: to_native(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [to_native(v) for v in obj]
+    elif isinstance(obj, (np.integer, np.int64, np.int32)):
+        return int(obj)
+    elif isinstance(obj, (np.floating, np.float64, np.float32)):
+        return float(obj)
+    elif isinstance(obj, np.bool_):
+        return bool(obj)
+    elif isinstance(obj, np.ndarray):
+        return obj.tolist()
+    else:
+        return obj
+
+
+# ============================================================
 # SHARED LLM INSTANCE (Efficiency fix)
 # ============================================================
 
 _shared_llm: Optional[LLMWrapper] = None
+_llm_init_error: Optional[str] = None
 
 
-def get_shared_llm() -> LLMWrapper:
+def get_shared_llm() -> Optional[LLMWrapper]:
     """Get a shared LLM instance for all agents"""
-    global _shared_llm
-    if _shared_llm is None:
-        _shared_llm = get_llm()
+    global _shared_llm, _llm_init_error
+    if _shared_llm is None and _llm_init_error is None:
+        try:
+            _shared_llm = get_llm()
+        except Exception as e:
+            _llm_init_error = str(e)
+            logger.error(f"Failed to initialize LLM: {e}")
     return _shared_llm
+
+
+def get_llm_error() -> Optional[str]:
+    """Get the LLM initialization error if any"""
+    return _llm_init_error
 
 
 # ============================================================
@@ -154,8 +188,8 @@ Provide a brief analysis of what the user needs."""
             if agents_needed:
                 state.next_agent = agents_needed[0]
             
-            # Store context for other agents
-            state.context["overall_summary"] = context_info
+            # Store context for other agents (convert numpy types)
+            state.context["overall_summary"] = to_native(context_info)
             
             # Add analysis to messages
             state.add_message("assistant", response.content, agent=self.agent_type.value)
@@ -192,6 +226,13 @@ Your responsibilities:
 3. Identify potential root causes
 4. Suggest verification steps
 
+IMPORTANT: Always structure your analysis in these steps:
+📊 STEP 1 - DATA GATHERED: List specific metrics retrieved
+📈 STEP 2 - COMPARISONS: Compare to portfolio/study averages  
+⚠️ STEP 3 - ANOMALY DETECTED: Describe specific anomalies found
+🔍 STEP 4 - PATTERN MATCHING: Match to known issue patterns
+🎯 STEP 5 - HYPOTHESES RANKED: List hypotheses with confidence %
+
 Guidelines:
 - Never claim certainty, always express confidence as percentages
 - Consider multiple possible causes
@@ -203,7 +244,7 @@ Guidelines:
     def allowed_tools(self) -> List[str]:
         return [
             "get_patient", "get_site_summary", "get_study_summary",
-            "get_cascade_impact", "search_patterns", "detect_anomalies",
+            "diagnose_study_dqi", "search_patterns", "detect_anomalies",
             "get_high_priority_patients"
         ]
     
@@ -211,6 +252,7 @@ Guidelines:
         """Investigate and diagnose issues"""
         
         context_data = {}
+        diagnosis_result = None
         
         # Check for site-specific queries
         query_lower = state.user_query.lower()
@@ -224,34 +266,81 @@ Guidelines:
                     context_data["site"] = result.data
                     break
         
-        # Check for study-specific queries
-        for word in state.user_query.replace(",", " ").replace(".", " ").split():
-            if "study" in word.lower() or word.startswith("Study_"):
-                study_id = word if word.startswith("Study_") else f"Study_{word.split('_')[-1] if '_' in word else word}"
+        # Check for study-specific queries - use the powerful diagnose_study_dqi tool
+        import re
+        study_match = re.search(r'study\s*(\d+)', query_lower)
+        if study_match:
+            study_num = study_match.group(1)
+            study_id = f"Study_{study_num}"
+            
+            # Use comprehensive diagnostic tool
+            diag_result = self.use_tool("diagnose_study_dqi", study_id=study_id)
+            if diag_result.success and "error" not in diag_result.data:
+                diagnosis_result = diag_result.data
+                context_data["diagnosis"] = diagnosis_result
+            else:
+                # Fallback to basic study summary
                 result = self.use_tool("get_study_summary", study_id=study_id)
                 if result.success and "error" not in result.data:
                     context_data["study"] = result.data
-                    break
         
         # Get high priority patients for context
         high_priority = self.use_tool("get_high_priority_patients", limit=10)
-        if high_priority.success:
-            context_data["high_priority_patients"] = high_priority.data
+        if high_priority.success and isinstance(high_priority.data, list) and len(high_priority.data) > 0:
+            if "error" not in str(high_priority.data[0]):
+                context_data["high_priority_patients"] = high_priority.data
         
         # Check for anomalies
         anomalies = self.use_tool("detect_anomalies", limit=5)
         if anomalies.success:
             context_data["anomalies"] = anomalies.data
         
-        # Generate diagnostic analysis
-        prompt = f"""Analyze this clinical trial situation and provide:
+        # Generate diagnostic analysis with structured format
+        if diagnosis_result:
+            # We have comprehensive diagnostic data - format it nicely
+            prompt = f"""Based on the comprehensive diagnostic data below, provide a detailed analysis.
+
+USER QUESTION: {state.user_query}
+
+DIAGNOSTIC DATA FOR {diagnosis_result.get('study_id', 'Unknown Study')}:
+{json.dumps(diagnosis_result, indent=2)}
+
+Structure your response EXACTLY as follows:
+
+📊 **STEP 1 - DATA GATHERED:**
+- List specific metrics from the diagnostic data
+- Include patient count, site count, DQI score, query counts
+
+📈 **STEP 2 - COMPARISONS:**
+- Compare study DQI ({diagnosis_result.get('data_gathered', {}).get('dqi_score', 'N/A')}) to portfolio average ({diagnosis_result.get('comparison', {}).get('portfolio_dqi_avg', 'N/A')})
+- Note if ABOVE or BELOW average
+- List component scores that are below average
+
+⚠️ **STEP 3 - ANOMALY DETECTED:**
+- List the anomalies: {diagnosis_result.get('anomalies_detected', [])}
+- Describe what these anomalies mean
+
+🔍 **STEP 4 - PATTERN MATCHING:**
+- Top issues found: {diagnosis_result.get('issue_breakdown', {})}
+- Worst performing sites: {diagnosis_result.get('site_analysis', {}).get('worst_performing', {})}
+
+🎯 **STEP 5 - HYPOTHESES RANKED:**
+Format each hypothesis as:
+1. [Hypothesis] - Confidence: X%
+   Evidence: [specific data points]
+
+Use the hypotheses_ranked data: {diagnosis_result.get('hypotheses_ranked', [])}
+
+Be specific and cite actual numbers from the data."""
+        else:
+            prompt = f"""Analyze this clinical trial situation and provide:
 1. Key observations from available data
 2. Possible root causes (with confidence %)
 3. Hypotheses to investigate
 4. Verification steps recommended
 
 Retrieved Data:
-{context_data}
+{json.dumps(context_data, indent=2)}
 
 Overall Context:
 {state.context.get('overall_summary', {})}
@@ -262,7 +351,7 @@ Provide specific, actionable insights."""
         response = self.generate(prompt, state)
         
         if response.success:
-            # Create hypothesis
+            # Create hypothesis (convert numpy types for serialization)
             hypothesis = Hypothesis(
                 hypothesis_id=f"HYP-{datetime.now().strftime('%Y%m%d%H%M%S')}",
                 description=response.content[:500],
@@ -271,7 +360,7 @@ Provide specific, actionable insights."""
                     source="diagnostic_analysis",
                     description="Analysis based on available data",
                     confidence=0.75,
-                    data=context_data
+                    data=to_native(context_data)
                 )],
                 verification_steps=[
                     "Review site-level data patterns",
@@ -702,6 +791,11 @@ class AgentOrchestrator:
     
     def __init__(self):
         """Initialize the orchestrator"""
+        # Check LLM availability first
+        llm = get_shared_llm()
+        if llm is None:
+            raise RuntimeError(f"LLM not available: {get_llm_error()}")
+        
         # Initialize agents (they share the LLM instance)
         self.supervisor = SupervisorAgent()
         self.diagnostic = DiagnosticAgent()
@@ -717,31 +811,55 @@ class AgentOrchestrator:
         
         logger.info("AgentOrchestrator initialized with shared LLM")
     
+    def _create_node_function(self, agent: BaseAgent):
+        """Create a node function that properly handles state conversion"""
+        def node_fn(state: Union[Dict, AgentState]) -> Dict:
+            # Convert dict to AgentState if needed
+            if isinstance(state, dict):
+                state_obj = AgentState(**state)
+            else:
+                state_obj = state
+            
+            # Process with the agent
+            result = agent.process(state_obj)
+            
+            # Return as dict for LangGraph
+            return result.model_dump()
+        
+        return node_fn
+    
     def _build_graph(self) -> StateGraph:
         """Build the LangGraph workflow"""
         
-        # Create the graph with AgentState
-        graph = StateGraph(AgentState)
+        # Create the graph with dict state (LangGraph compatible)
+        graph = StateGraph(dict)
         
-        # Add nodes for each agent
-        graph.add_node("supervisor", self.supervisor)
-        graph.add_node("diagnostic", self.diagnostic)
-        graph.add_node("forecaster", self.forecaster)
-        graph.add_node("resolver", self.resolver)
-        graph.add_node("communicator", self.communicator)
-        graph.add_node("synthesizer", self.synthesizer)
+        # Add nodes using wrapper functions
+        graph.add_node("supervisor", self._create_node_function(self.supervisor))
+        graph.add_node("diagnostic", self._create_node_function(self.diagnostic))
+        graph.add_node("forecaster", self._create_node_function(self.forecaster))
+        graph.add_node("resolver", self._create_node_function(self.resolver))
+        graph.add_node("communicator", self._create_node_function(self.communicator))
+        graph.add_node("synthesizer", self._create_node_function(self.synthesizer))
         
         # Define routing logic
-        def route_from_supervisor(state: AgentState) -> str:
+        def route_from_supervisor(state: Dict) -> str:
             """Route from supervisor to first specialist"""
-            if state.next_agent:
-                return state.next_agent.value
+            next_agent = state.get("next_agent")
+            if next_agent:
+                # Handle both enum and string
+                if hasattr(next_agent, 'value'):
+                    return next_agent.value
+                return str(next_agent)
             return "synthesizer"
         
-        def route_next(state: AgentState) -> str:
+        def route_next(state: Dict) -> str:
             """Route to next agent or synthesizer"""
-            if state.next_agent:
-                return state.next_agent.value
+            next_agent = state.get("next_agent")
+            if next_agent:
+                if hasattr(next_agent, 'value'):
+                    return next_agent.value
+                return str(next_agent)
             return "synthesizer"
         
         # Set entry point
@@ -801,6 +919,9 @@ class AgentOrchestrator:
         # Create initial state
         state = create_initial_state(query, context, priority)
         
+        # Convert to dict for LangGraph
+        state_dict = state.model_dump()
+        
         # Configure thread
         config = {"configurable": {"thread_id": thread_id or state.task_id}}
         
@@ -808,18 +929,32 @@ class AgentOrchestrator:
         
         # Run the graph
         final_state_dict = None
-        for step in self.app.stream(state, config):
-            # Log progress
-            for node_name, node_state in step.items():
-                logger.info(f"  → {node_name} completed")
-                final_state_dict = node_state
+        try:
+            for step in self.app.stream(state_dict, config):
+                # Log progress
+                for node_name, node_state in step.items():
+                    logger.info(f"  → {node_name} completed")
+                    final_state_dict = node_state
+        except Exception as e:
+            logger.error(f"Orchestration error: {e}")
+            state.errors.append(f"Orchestration failed: {str(e)}")
+            state.task_status = TaskStatus.FAILED
+            state.final_response = f"I encountered an error processing your request: {str(e)}"
+            return state
         
-        # Convert dict back to AgentState (LangGraph returns dict)
+        # Convert dict back to AgentState
         if final_state_dict is not None:
-            if isinstance(final_state_dict, dict):
-                final_state = AgentState(**final_state_dict)
-            else:
-                final_state = final_state_dict
+            try:
+                if isinstance(final_state_dict, dict):
+                    final_state = AgentState.model_validate(final_state_dict)
+                else:
+                    final_state = final_state_dict
+            except Exception as e:
+                logger.error(f"State conversion error: {e}")
+                # Return a partial state with what we have
+                final_state = state
+                final_state.final_response = final_state_dict.get("final_response", "Analysis complete.")
+                final_state.task_status = TaskStatus.COMPLETED
         else:
             final_state = state
             final_state.task_status = TaskStatus.FAILED

@@ -22,12 +22,21 @@ def get_orchestrator():
     """Get or create the agent orchestrator instance."""
     if 'ai_orchestrator' not in st.session_state:
         try:
-            from src.agents.orchestrator import AgentOrchestrator
+            from src.agents.orchestrator import AgentOrchestrator, get_llm_error
             st.session_state.ai_orchestrator = AgentOrchestrator()
             st.session_state.ai_orchestrator_error = None
         except Exception as e:
             st.session_state.ai_orchestrator = None
-            st.session_state.ai_orchestrator_error = str(e)
+            # Get more specific error message
+            try:
+                from src.agents.orchestrator import get_llm_error
+                llm_error = get_llm_error()
+                if llm_error:
+                    st.session_state.ai_orchestrator_error = f"LLM Error: {llm_error}"
+                else:
+                    st.session_state.ai_orchestrator_error = str(e)
+            except:
+                st.session_state.ai_orchestrator_error = str(e)
     return st.session_state.ai_orchestrator
 
 
@@ -336,18 +345,42 @@ def render_page(user: Dict[str, Any]):
     # Check orchestrator status
     orchestrator = get_orchestrator()
     if orchestrator is None:
-        st.error(f"""
-        ⚠️ **AI System Not Available**
+        error_msg = st.session_state.get('ai_orchestrator_error', 'Unknown error')
         
-        The AI agent orchestrator could not be initialized. This may be because:
-        - LLM (Ollama) is not running
-        - Required dependencies are missing
+        # Provide helpful guidance based on error
+        if "groq" in error_msg.lower() or "api" in error_msg.lower():
+            st.error(f"""
+            ⚠️ **AI System Not Available**
+            
+            The AI agent needs an LLM provider. Please configure one:
+            
+            **Option 1: Groq (Cloud - Recommended)**
+            1. Get API key from [console.groq.com](https://console.groq.com)
+            2. Add to your `.env` file:
+            ```
+            GROQ_API_KEY=your-key-here
+            LLM_PRIMARY_PROVIDER=groq
+            ```
+            3. Restart the dashboard
+            
+            **Option 2: Ollama (Local)**
+            1. Install Ollama from [ollama.ai](https://ollama.ai)
+            2. Run: `ollama serve`
+            3. Pull a model: `ollama pull llama3.1:8b`
+            
+            **Error:** {error_msg}
+            """)
+        else:
+            st.error(f"""
+            ⚠️ **AI System Not Available**
+            
+            The AI agent orchestrator could not be initialized.
+            
+            **Error:** {error_msg}
+            
+            Please ensure LLM is configured (Groq or Ollama).
+            """)
         
-        **Error:** {st.session_state.get('ai_orchestrator_error', 'Unknown error')}
-        
-        To start Ollama, run: `ollama serve`
-        """)
-        # Show a simplified interface without AI
         st.info("You can still browse the dashboard, but AI-powered features are unavailable.")
         return
     else:

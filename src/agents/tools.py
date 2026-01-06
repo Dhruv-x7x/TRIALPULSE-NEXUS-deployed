@@ -123,10 +123,29 @@ class ToolRegistry:
             lines.append(f"- {name}: {tool.description}")
         return "\n".join(lines)
     
+    # === Helper to convert numpy types to Python native ===
+    
+    def _to_native(self, obj):
+        """Convert numpy types to Python native types for serialization"""
+        if isinstance(obj, dict):
+            return {k: self._to_native(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [self._to_native(v) for v in obj]
+        elif isinstance(obj, (np.integer, np.int64, np.int32)):
+            return int(obj)
+        elif isinstance(obj, (np.floating, np.float64, np.float32)):
+            return float(obj)
+        elif isinstance(obj, np.bool_):
+            return bool(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return obj
+    
     # === Data Loading Helper ===
     
-    def _load_data(self, filename: str, subdir: str = "") -> pd.DataFrame:
-        """Load data file with caching"""
+    def _load_data(self, filename: str, subdir: str = "") -> Optional[pd.DataFrame]:
+        """Load data file with caching. Returns None if file doesn't exist."""
         cache_key = f"{subdir}/{filename}"
         
         if cache_key not in self._data_cache:
@@ -136,16 +155,34 @@ class ToolRegistry:
                 filepath = self.data_dir / filename
             
             if filepath.exists():
-                self._data_cache[cache_key] = pd.read_parquet(filepath)
+                try:
+                    self._data_cache[cache_key] = pd.read_parquet(filepath)
+                except Exception as e:
+                    logger.warning(f"Failed to load {filepath}: {e}")
+                    return None
             else:
-                raise FileNotFoundError(f"Data file not found: {filepath}")
+                logger.debug(f"Data file not found: {filepath}")
+                return None
         
         return self._data_cache[cache_key]
     
-    def _get_primary_data(self) -> pd.DataFrame:
+    def _get_primary_data(self) -> Optional[pd.DataFrame]:
         """Get the primary patient data file with all columns"""
-        # Use cascade analysis as it has the most complete data
-        return self._load_data("patient_cascade_analysis.parquet", "analytics")
+        # Try multiple possible data files in order of preference
+        files_to_try = [
+            ("patient_dqi_enhanced.parquet", "analytics"),
+            ("patient_clean_status.parquet", "analytics"),
+            ("patient_dblock_status.parquet", "analytics"),
+            ("unified_patient_record.parquet", "upr"),
+        ]
+        
+        for filename, subdir in files_to_try:
+            df = self._load_data(filename, subdir)
+            if df is not None:
+                return df
+        
+        logger.warning("No primary data file available")
+        return None
     
     # === Data Tools ===
     
@@ -155,6 +192,9 @@ class ToolRegistry:
         def get_patient(patient_key: str) -> Dict[str, Any]:
             """Get patient data by patient_key"""
             df = self._get_primary_data()
+            if df is None:
+                return {"error": "Data not available. Please run pipelines first."}
+            
             patient = df[df["patient_key"] == patient_key]
             if len(patient) == 0:
                 return {"error": f"Patient {patient_key} not found"}
@@ -168,13 +208,13 @@ class ToolRegistry:
                 "dqi_score": float(row.get("dqi_score", 0)),
                 "dqi_band": row.get("dqi_band"),
                 "risk_level": row.get("risk_level"),
-                "tier1_clean": bool(row.get("tier1_clean", False)),
-                "tier2_clean": bool(row.get("tier2_clean", False)),
+                "tier1_clinical_clean": bool(row.get("tier1_clinical_clean", False)),
+                "tier2_operational_clean": bool(row.get("tier2_operational_clean", False)),
                 "total_queries": float(row.get("total_queries", 0)),
-                "cascade_issue_count": int(row.get("cascade_issue_count", 0)),
-                "cascade_impact_score": float(row.get("cascade_impact_score", 0)),
-                "primary_blocker": row.get("cascade_primary_blocker"),
-                "path_to_clean": row.get("path_to_clean"),
+                "total_issues": int(row.get("total_issues_all_sources", 0)),
+                "dqi_primary_issue": row.get("dqi_primary_issue"),
+                "tier1_blocking_reason": row.get("tier1_blocking_reason"),
+                "tier2_blocking_reason": row.get("tier2_blocking_reason"),
                 "db_lock_status": row.get("db_lock_status"),
             }
         
@@ -189,6 +229,9 @@ class ToolRegistry:
         def get_site_summary(site_id: str) -> Dict[str, Any]:
             """Get site summary statistics"""
             df = self._get_primary_data()
+            if df is None:
+                return {"error": "Data not available. Please run pipelines first."}
+            
             site_data = df[df["site_id"] == site_id]
             
             if len(site_data) == 0:
@@ -199,13 +242,12 @@ class ToolRegistry:
                 "study_id": site_data["study_id"].iloc[0],
                 "patient_count": len(site_data),
                 "avg_dqi": float(site_data["dqi_score"].mean()),
-                "tier1_clean_rate": float(site_data["tier1_clean"].mean() * 100),
-                "tier2_clean_rate": float(site_data["tier2_clean"].mean() * 100),
+                "tier1_clean_rate": float(site_data["tier1_clinical_clean"].mean() * 100) if "tier1_clinical_clean" in site_data else 0,
+                "tier2_clean_rate": float(site_data["tier2_operational_clean"].mean() * 100) if "tier2_operational_clean" in site_data else 0,
                 "total_queries": int(site_data["total_queries"].sum()),
-                "avg_cascade_impact": float(site_data["cascade_impact_score"].mean()),
-                "patients_with_issues": int((site_data["cascade_issue_count"] > 0).sum()),
+                "patients_with_issues": int((site_data["total_issues_all_sources"] > 0).sum()),
                 "risk_high_critical": int(site_data["risk_level"].isin(["High", "Critical"]).sum()),
-                "db_lock_ready": int((site_data["db_lock_status"] == "Ready").sum()),
+                "db_lock_ready": int((site_data["db_lock_status"] == "Ready").sum()) if "db_lock_status" in site_data else 0,
             }
         
         self.register(Tool(
@@ -219,25 +261,31 @@ class ToolRegistry:
         def get_study_summary(study_id: str) -> Dict[str, Any]:
             """Get study summary statistics"""
             df = self._get_primary_data()
+            if df is None:
+                return {"error": "Data not available. Please run pipelines first."}
+            
             study_data = df[df["study_id"] == study_id]
             
             if len(study_data) == 0:
                 return {"error": f"Study {study_id} not found"}
             
-            return {
+            return self._to_native({
                 "study_id": study_id,
                 "patient_count": len(study_data),
-                "site_count": study_data["site_id"].nunique(),
+                "site_count": int(study_data["site_id"].nunique()),
                 "avg_dqi": float(study_data["dqi_score"].mean()),
-                "tier1_clean_rate": float(study_data["tier1_clean"].mean() * 100),
-                "tier2_clean_rate": float(study_data["tier2_clean"].mean() * 100),
+                "dqi_std": float(study_data["dqi_score"].std()),
+                "dqi_min": float(study_data["dqi_score"].min()),
+                "dqi_max": float(study_data["dqi_score"].max()),
+                "tier1_clean_rate": float(study_data["tier1_clinical_clean"].mean() * 100) if "tier1_clinical_clean" in study_data else 0,
+                "tier2_clean_rate": float(study_data["tier2_operational_clean"].mean() * 100) if "tier2_operational_clean" in study_data else 0,
                 "total_queries": int(study_data["total_queries"].sum()),
-                "patients_with_issues": int((study_data["cascade_issue_count"] > 0).sum()),
-                "issue_rate": float((study_data["cascade_issue_count"] > 0).mean() * 100),
-                "risk_high_critical": int(study_data["risk_level"].isin(["High", "Critical"]).sum()),
-                "db_lock_ready": int((study_data["db_lock_status"] == "Ready").sum()),
-                "db_lock_ready_rate": float((study_data["db_lock_status"] == "Ready").mean() * 100),
-            }
+                "patients_with_issues": int((study_data["total_issues_all_sources"] > 0).sum()),
+                "issue_rate": float((study_data["total_issues_all_sources"] > 0).mean() * 100),
+                "risk_distribution": study_data["risk_level"].value_counts().to_dict(),
+                "dqi_band_distribution": study_data["dqi_band"].value_counts().to_dict(),
+                "top_primary_issues": study_data["dqi_primary_issue"].value_counts().head(5).to_dict(),
+            })
         
         self.register(Tool(
             name="get_study_summary",
@@ -248,17 +296,19 @@ class ToolRegistry:
         ))
         
         def get_high_priority_patients(limit: int = 20) -> List[Dict[str, Any]]:
-            """Get patients with high/critical risk or high cascade impact"""
+            """Get patients with high/critical risk or low DQI scores"""
             df = self._get_primary_data()
+            if df is None:
+                return [{"error": "Data not available. Please run pipelines first."}]
             
             # Filter for high priority patients
             high_priority = df[
                 (df["risk_level"].isin(["High", "Critical"])) | 
-                (df["cascade_issue_count"] > 3)
+                (df["dqi_score"] < 70)
             ].copy()
             
-            # Sort by cascade impact
-            high_priority = high_priority.sort_values("cascade_impact_score", ascending=False)
+            # Sort by DQI score (lowest first)
+            high_priority = high_priority.sort_values("dqi_score", ascending=True)
             
             results = []
             for _, row in high_priority.head(limit).iterrows():
@@ -268,9 +318,10 @@ class ToolRegistry:
                     "site_id": row["site_id"],
                     "risk_level": row["risk_level"],
                     "dqi_score": float(row["dqi_score"]),
-                    "cascade_issue_count": int(row["cascade_issue_count"]),
-                    "cascade_impact_score": float(row["cascade_impact_score"]),
-                    "primary_blocker": row.get("cascade_primary_blocker"),
+                    "dqi_band": row["dqi_band"],
+                    "total_issues": int(row.get("total_issues_all_sources", 0)),
+                    "total_queries": int(row.get("total_queries", 0)),
+                    "dqi_primary_issue": row.get("dqi_primary_issue"),
                 })
             
             return results
@@ -286,21 +337,23 @@ class ToolRegistry:
         def get_overall_summary() -> Dict[str, Any]:
             """Get overall summary across all studies"""
             df = self._get_primary_data()
+            if df is None:
+                return {"error": "Data not available. Please run pipelines first."}
             
-            return {
+            return self._to_native({
                 "total_patients": len(df),
-                "total_studies": df["study_id"].nunique(),
-                "total_sites": df["site_id"].nunique(),
+                "total_studies": int(df["study_id"].nunique()),
+                "total_sites": int(df["site_id"].nunique()),
                 "avg_dqi": float(df["dqi_score"].mean()),
-                "tier1_clean_rate": float(df["tier1_clean"].mean() * 100),
-                "tier2_clean_rate": float(df["tier2_clean"].mean() * 100),
-                "patients_with_issues": int((df["cascade_issue_count"] > 0).sum()),
-                "patients_clean": int((df["cascade_issue_count"] == 0).sum()),
+                "dqi_std": float(df["dqi_score"].std()),
+                "tier1_clean_rate": float(df["tier1_clinical_clean"].mean() * 100) if "tier1_clinical_clean" in df else 0,
+                "tier2_clean_rate": float(df["tier2_operational_clean"].mean() * 100) if "tier2_operational_clean" in df else 0,
+                "patients_with_issues": int((df["total_issues_all_sources"] > 0).sum()),
+                "patients_clean": int((df["total_issues_all_sources"] == 0).sum()),
                 "risk_distribution": df["risk_level"].value_counts().to_dict(),
-                "db_lock_ready": int((df["db_lock_status"] == "Ready").sum()),
-                "db_lock_ready_rate": float((df["db_lock_status"] == "Ready").mean() * 100),
+                "dqi_band_distribution": df["dqi_band"].value_counts().to_dict(),
                 "top_issues": df["dqi_primary_issue"].value_counts().head(5).to_dict(),
-            }
+            })
         
         self.register(Tool(
             name="get_overall_summary",
@@ -308,6 +361,146 @@ class ToolRegistry:
             function=get_overall_summary,
             parameters={},
             category="data"
+        ))
+        
+        def diagnose_study_dqi(study_id: str) -> Dict[str, Any]:
+            """
+            Comprehensive DQI diagnostic for a study.
+            Returns detailed analysis comparing to portfolio average, 
+            identifying anomalies, and ranking hypotheses.
+            """
+            df = self._get_primary_data()
+            if df is None:
+                return {"error": "Data not available. Please run pipelines first."}
+            
+            # Get study data
+            study_data = df[df["study_id"] == study_id]
+            if len(study_data) == 0:
+                return {"error": f"Study {study_id} not found"}
+            
+            # Calculate study metrics
+            study_dqi = study_data["dqi_score"].mean()
+            portfolio_dqi = df["dqi_score"].mean()
+            dqi_diff = study_dqi - portfolio_dqi
+            
+            # Component scores
+            component_cols = [
+                "dqi_safety_raw", "dqi_query_raw", "dqi_completeness_raw",
+                "dqi_coding_raw", "dqi_lab_raw", "dqi_sdv_raw", 
+                "dqi_signature_raw", "dqi_edrr_raw"
+            ]
+            
+            component_analysis = {}
+            for col in component_cols:
+                if col in study_data.columns:
+                    study_avg = study_data[col].mean()
+                    portfolio_avg = df[col].mean()
+                    component_name = col.replace("dqi_", "").replace("_raw", "")
+                    component_analysis[component_name] = {
+                        "study_avg": round(float(study_avg), 1),
+                        "portfolio_avg": round(float(portfolio_avg), 1),
+                        "difference": round(float(study_avg - portfolio_avg), 1),
+                        "is_below_average": bool(study_avg < portfolio_avg)
+                    }
+            
+            # Find worst components
+            worst_components = sorted(
+                component_analysis.items(),
+                key=lambda x: x[1]["difference"]
+            )[:3]
+            
+            # Issue breakdown
+            issue_counts = study_data["dqi_primary_issue"].value_counts().to_dict()
+            
+            # Site performance
+            site_dqi = study_data.groupby("site_id")["dqi_score"].mean().sort_values()
+            worst_sites = site_dqi.head(5).to_dict()
+            best_sites = site_dqi.tail(5).to_dict()
+            
+            # Risk distribution
+            risk_dist = study_data["risk_level"].value_counts().to_dict()
+            
+            # Query analysis
+            total_queries = study_data["total_queries"].sum()
+            dm_queries = study_data["dm_queries"].sum() if "dm_queries" in study_data else 0
+            clinical_queries = study_data["clinical_queries"].sum() if "clinical_queries" in study_data else 0
+            
+            # Generate hypotheses based on data
+            hypotheses = []
+            
+            # Check for query issues
+            if component_analysis.get("query", {}).get("is_below_average"):
+                hypotheses.append({
+                    "hypothesis": "High query volume impacting DQI",
+                    "confidence": 85 if total_queries > 1000 else 60,
+                    "evidence": f"Total queries: {int(total_queries)}, Study avg query score: {component_analysis['query']['study_avg']}"
+                })
+            
+            # Check for SDV issues
+            if component_analysis.get("sdv", {}).get("is_below_average"):
+                sdv_score = component_analysis["sdv"]["study_avg"]
+                hypotheses.append({
+                    "hypothesis": "SDV backlog causing DQI drop",
+                    "confidence": 90 if sdv_score < 80 else 65,
+                    "evidence": f"SDV score: {sdv_score}, vs portfolio {component_analysis['sdv']['portfolio_avg']}"
+                })
+            
+            # Check for signature issues
+            if component_analysis.get("signature", {}).get("is_below_average"):
+                sig_score = component_analysis["signature"]["study_avg"]
+                hypotheses.append({
+                    "hypothesis": "Signature delays impacting quality",
+                    "confidence": 75 if sig_score < 85 else 55,
+                    "evidence": f"Signature score: {sig_score}"
+                })
+            
+            # Check for coding issues
+            if component_analysis.get("coding", {}).get("is_below_average"):
+                hypotheses.append({
+                    "hypothesis": "Medical coding backlog",
+                    "confidence": 70,
+                    "evidence": f"Coding score: {component_analysis['coding']['study_avg']}"
+                })
+            
+            # Sort hypotheses by confidence
+            hypotheses = sorted(hypotheses, key=lambda x: x["confidence"], reverse=True)
+            
+            # Convert all numpy types to native Python for serialization
+            return self._to_native({
+                "study_id": study_id,
+                "data_gathered": {
+                    "patient_count": len(study_data),
+                    "site_count": study_data["site_id"].nunique(),
+                    "dqi_score": round(float(study_dqi), 2),
+                    "dqi_std": round(float(study_data["dqi_score"].std()), 2),
+                    "total_queries": int(total_queries),
+                    "dm_queries": int(dm_queries),
+                    "clinical_queries": int(clinical_queries),
+                },
+                "comparison": {
+                    "portfolio_dqi_avg": round(float(portfolio_dqi), 2),
+                    "difference_from_avg": round(float(dqi_diff), 2),
+                    "percentile_rank": round(float((df.groupby("study_id")["dqi_score"].mean() <= study_dqi).mean() * 100), 1),
+                    "status": "ABOVE AVERAGE" if dqi_diff > 0 else "BELOW AVERAGE"
+                },
+                "component_analysis": component_analysis,
+                "anomalies_detected": [w[0] for w in worst_components if w[1]["is_below_average"]],
+                "worst_components": {w[0]: w[1] for w in worst_components},
+                "issue_breakdown": issue_counts,
+                "site_analysis": {
+                    "worst_performing": worst_sites,
+                    "best_performing": best_sites
+                },
+                "risk_distribution": risk_dist,
+                "hypotheses_ranked": hypotheses if hypotheses else [{"hypothesis": "Study performing at or above average", "confidence": 90, "evidence": f"DQI {round(float(study_dqi), 1)} vs portfolio {round(float(portfolio_dqi), 1)}"}]
+            })
+        
+        self.register(Tool(
+            name="diagnose_study_dqi",
+            description="Comprehensive DQI diagnostic for a study - analyzes components, compares to portfolio, finds anomalies, and generates ranked hypotheses",
+            function=diagnose_study_dqi,
+            parameters={"study_id": "str - Study identifier (e.g., Study_21)"},
+            category="analytics"
         ))
     
     # === Search Tools ===

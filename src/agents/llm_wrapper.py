@@ -104,18 +104,7 @@ class LLMWrapper:
     
     def _init_clients(self):
         """Initialize LLM clients"""
-        # Initialize Ollama
-        try:
-            import ollama
-            self._ollama_client = ollama.Client(host=self.config.ollama.host)
-            # Test connection
-            self._ollama_client.list()
-            logger.info(f"✅ Ollama connected at {self.config.ollama.host}")
-        except Exception as e:
-            logger.warning(f"⚠️ Ollama not available: {e}")
-            self._ollama_client = None
-        
-        # Initialize Groq
+        # Initialize Groq first (more reliable for cloud deployment)
         if self.config.groq.api_key:
             try:
                 from groq import Groq
@@ -125,7 +114,23 @@ class LLMWrapper:
                 logger.warning(f"⚠️ Groq not available: {e}")
                 self._groq_client = None
         else:
-            logger.info("ℹ️ Groq API key not configured (optional)")
+            logger.info("ℹ️ Groq API key not configured")
+            self._groq_client = None
+        
+        # Initialize Ollama (may not be available on cloud)
+        try:
+            import ollama
+            self._ollama_client = ollama.Client(host=self.config.ollama.host)
+            # Test connection with timeout
+            self._ollama_client.list()
+            logger.info(f"✅ Ollama connected at {self.config.ollama.host}")
+        except Exception as e:
+            logger.info(f"ℹ️ Ollama not available: {e}")
+            self._ollama_client = None
+        
+        # Validate at least one provider is available
+        if self._ollama_client is None and self._groq_client is None:
+            logger.warning("⚠️ No LLM providers available! AI features will be limited.")
     
     def _get_cache_key(self, prompt: str, system_prompt: str, model: str) -> str:
         """Generate cache key for request"""
