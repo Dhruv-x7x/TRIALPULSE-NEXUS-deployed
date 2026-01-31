@@ -45,17 +45,17 @@ database/reproduction_dump.sql
 ```
 📥 **[Download Database Dump](https://drive.google.com/file/d/1rurYOMNUhG6ncy-e7EI7jDXl6NU9y_K2/view?usp=sharing)** (~212 MB)
 
-## 📊 Model Weights, Notebooks & Documentation
+## 📊 Model Weights & Research
 
-All ML model weights (including fine-tuned models), research notebooks, plots, and results are available at:
+All ML model weights (including fine-tuned models), research notebooks, and result plots are available at:
 
 🔗 **[trialpulse_nexus Repository](https://github.com/PARZIVALPRIME/trialpulse_nexus)**
 
-This includes:
-- Pre-trained and fine-tuned model weights
-- Jupyter notebooks with experiments
-- Visualization plots and charts
-- Full LaTeX documentation (6 modules)
+## 📚 Documentation
+
+Full technical documentation is included in this repository:
+
+📄 **[Documentation.pdf](./Documentation.pdf)** - Complete 6-module technical documentation
 
 ## 📦 What `run.py` Does
 
