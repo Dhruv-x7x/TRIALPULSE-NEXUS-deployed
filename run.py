@@ -706,6 +706,9 @@ Examples:
         sys.exit(1)
     if not check_npm():
         sys.exit(1)
+
+    print("\n⚠️  IMPORTANT: Ensure your .env file has the correct DB_PASSWORD!")
+    print("   If you see 500 errors, check your database credentials.\n")
     
     # Run appropriate mode
     try:
