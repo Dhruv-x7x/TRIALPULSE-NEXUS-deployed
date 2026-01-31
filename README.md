@@ -16,6 +16,9 @@ This is submission by Team PARZIVAL (Riyaz, Dhruv, Preetam) for the NOVA AI Hack
 > [!WARNING]
 > **First-time installation may take 10-15 minutes** depending on your network speed and storage. The full dependency installation is **~10GB** (Python ML libraries + Node modules). Ensure you have sufficient disk space and a stable internet connection.
 
+> [!NOTE]
+> **Initial dashboard load may take 15-30 seconds** as the database initializes and caches data. Subsequent loads will be faster.
+
 ---
 
 ## 🚀 Quick Start (Manual Setup)
