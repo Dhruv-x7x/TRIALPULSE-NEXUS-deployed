@@ -1,0 +1,33 @@
+"""Configuration module for TRIALPULSE NEXUS 10X."""
+
+from .settings import (
+    PROJECT_ROOT,
+    DATA_RAW,
+    DATA_PROCESSED,
+    DATA_OUTPUTS,
+    LOGS_DIR,
+    MODELS_DIR,
+    KNOWLEDGE_BASE_DIR,
+    FILE_PATTERNS,
+    DQI_CONFIG,
+    CLEAN_PATIENT_CONFIG,
+    LOG_FORMAT,
+    LOG_ROTATION,
+    LOG_RETENTION
+)
+
+__all__ = [
+    'PROJECT_ROOT',
+    'DATA_RAW',
+    'DATA_PROCESSED',
+    'DATA_OUTPUTS',
+    'LOGS_DIR',
+    'MODELS_DIR',
+    'KNOWLEDGE_BASE_DIR',
+    'FILE_PATTERNS',
+    'DQI_CONFIG',
+    'CLEAN_PATIENT_CONFIG',
+    'LOG_FORMAT',
+    'LOG_ROTATION',
+    'LOG_RETENTION'
+]

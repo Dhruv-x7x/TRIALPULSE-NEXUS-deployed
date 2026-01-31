@@ -1,0 +1,32 @@
+# FastAPI Backend Requirements
+# These should match versions in the root requirements.txt
+# Install from root: pip install -r requirements.txt
+
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+python-jose[cryptography]>=3.3.0
+python-multipart>=0.0.6
+pydantic>=2.5.3
+pydantic-settings>=2.1.0
+sqlalchemy>=2.0.25
+psycopg2-binary>=2.9.9
+pandas>=2.1.4
+# Additional Utilities
+python-dotenv>=1.0.0
+Jinja2>=3.1.2
+weasyprint>=60.1
+python-docx>=1.1.0
+python-pptx>=0.6.22
+neo4j>=5.14.1
+kafka-python>=2.0.2
+pyarrow>=14.0.1
+numpy>=1.26.3
+python-dateutil>=2.8.2
+requests>=2.31.0
+
+# Vector Store & ML (for RAG)
+qdrant-client>=1.7.0
+fastembed>=0.1.0
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+onnxruntime>=1.16.0

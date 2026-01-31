@@ -1,0 +1,29 @@
+{
+  "created_at": "2026-01-31T13:00:43.212048",
+  "version": "1.1",
+  "embedding_model": "all-MiniLM-L6-v2",
+  "chunk_size": 500,
+  "chunk_overlap": 100,
+  "total_documents": 363,
+  "embedding_dimension": 384,
+  "sources": {
+    "ich_gcp": 175,
+    "protocol": 101,
+    "sop": 87
+  },
+  "categories": {
+    "data_quality": 18,
+    "clean_patient": 11,
+    "database_lock": 11,
+    "safety": 26,
+    "monitoring": 16,
+    "site_management": 15,
+    "essential_documents": 17,
+    "cascade_analysis": 9,
+    "patterns": 8,
+    "regulatory": 10,
+    "audit": 18,
+    "data_management": 19,
+    "coding": 10
+  }
+}

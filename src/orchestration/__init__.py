@@ -1,0 +1,166 @@
+# src/orchestration/__init__.py
+"""
+TRIALPULSE NEXUS 10X - Orchestration Module
+
+Phase 11: End-to-End Integration
+- 11.1 Pipeline Orchestration
+- 11.2 Error Handling
+- 11.3 Performance Optimization
+- 11.4 Testing Suite
+"""
+
+from .pipeline_orchestrator import (
+    PipelineOrchestrator,
+    get_pipeline_orchestrator,
+    reset_pipeline_orchestrator,
+    run_data_refresh,
+    run_model_inference,
+    run_agent_tasks,
+    run_dashboard_update,
+    run_full_pipeline,
+    get_pipeline_status,
+    get_pipeline_stats,
+)
+
+from .error_handling import (
+    ErrorHandlingSystem,
+    get_error_handling_system,
+    reset_error_handling_system,
+    handle_error,
+    with_error_handling,
+    get_system_health,
+    recover_component,
+)
+
+from .performance_optimization import (
+    PerformanceOptimizationSystem,
+    CacheManager,
+    LazyLoader,
+    QueryOptimizer,
+    ResponseTimeMonitor,
+    CacheEntry,
+    CacheConfig,
+    CacheStats,
+    LazyObject,
+    QueryProfile,
+    ResponseTimeTarget,
+    PerformanceMetrics,
+    CacheLayer,
+    CachePolicy,
+    LoadingStrategy,
+    PerformanceLevel,
+    OptimizationStatus,
+    get_performance_system,
+    reset_performance_system,
+    cache_get,
+    cache_set,
+    cache_delete,
+    record_timing,
+    get_performance_stats,
+    get_health,
+)
+
+from .testing_suite import (
+    TestingSuiteManager,
+    TestRegistry,
+    TestRunner,
+    UnitTestGenerator,
+    IntegrationTestGenerator,
+    E2ETestGenerator,
+    UATTestGenerator,
+    Assertions,
+    TestCase,
+    TestResult,
+    TestSuiteResult,
+    CoverageReport,
+    UATScenario,
+    TestType,
+    TestStatus,
+    TestPriority,
+    TestCategory,
+    get_testing_suite,
+    reset_testing_suite,
+    run_unit_tests,
+    run_integration_tests,
+    run_e2e_tests,
+    run_all_tests,
+    run_critical_tests,
+    get_test_stats,
+)
+
+__all__ = [
+    # Pipeline Orchestrator
+    'PipelineOrchestrator',
+    'get_pipeline_orchestrator',
+    'reset_pipeline_orchestrator',
+    'run_data_refresh',
+    'run_model_inference',
+    'run_agent_tasks',
+    'run_dashboard_update',
+    'run_full_pipeline',
+    'get_pipeline_status',
+    'get_pipeline_stats',
+    
+    # Error Handling
+    'ErrorHandlingSystem',
+    'get_error_handling_system',
+    'reset_error_handling_system',
+    'handle_error',
+    'with_error_handling',
+    'get_system_health',
+    'recover_component',
+    
+    # Performance Optimization
+    'PerformanceOptimizationSystem',
+    'CacheManager',
+    'LazyLoader',
+    'QueryOptimizer',
+    'ResponseTimeMonitor',
+    'CacheEntry',
+    'CacheConfig',
+    'CacheStats',
+    'LazyObject',
+    'QueryProfile',
+    'ResponseTimeTarget',
+    'PerformanceMetrics',
+    'CacheLayer',
+    'CachePolicy',
+    'LoadingStrategy',
+    'PerformanceLevel',
+    'OptimizationStatus',
+    'get_performance_system',
+    'reset_performance_system',
+    'cache_get',
+    'cache_set',
+    'cache_delete',
+    'record_timing',
+    'get_performance_stats',
+    'get_health',
+    
+    # Testing Suite
+    'TestingSuiteManager',
+    'TestRegistry',
+    'TestRunner',
+    'UnitTestGenerator',
+    'IntegrationTestGenerator',
+    'E2ETestGenerator',
+    'UATTestGenerator',
+    'Assertions',
+    'TestCase',
+    'TestResult',
+    'TestSuiteResult',
+    'CoverageReport',
+    'UATScenario',
+    'TestType',
+    'TestStatus',
+    'TestPriority',
+    'TestCategory',
+    'get_testing_suite',
+    'reset_testing_suite',
+    'run_unit_tests',
+    'run_integration_tests',
+    'run_e2e_tests',
+    'run_all_tests',
+    'run_critical_tests',
+    'get_test_stats',
+]

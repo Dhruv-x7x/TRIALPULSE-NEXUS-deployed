@@ -1,0 +1,33 @@
+{
+  "status": "ready",
+  "total_documents": 363,
+  "total_characters": 98427,
+  "total_words": 14276,
+  "avg_chunk_size": 271,
+  "min_chunk_size": 150,
+  "max_chunk_size": 742,
+  "source_distribution": {
+    "ich_gcp": 175,
+    "protocol": 101,
+    "sop": 87
+  },
+  "category_distribution": {
+    "data_quality": 18,
+    "clean_patient": 11,
+    "database_lock": 11,
+    "safety": 26,
+    "monitoring": 16,
+    "site_management": 15,
+    "essential_documents": 17,
+    "cascade_analysis": 9,
+    "patterns": 8,
+    "regulatory": 10,
+    "audit": 18,
+    "data_management": 19,
+    "coding": 10
+  },
+  "embedding_dimension": 384,
+  "index_built": true,
+  "timestamp": "2026-01-31T13:00:43.790288",
+  "version": "1.1"
+}

@@ -1,0 +1,393 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark theme colors matching the screenshots */
+    --background: 220 20% 10%;
+    --foreground: 210 20% 95%;
+    --card: 220 20% 13%;
+    --card-foreground: 210 20% 95%;
+    --popover: 220 20% 13%;
+    --popover-foreground: 210 20% 95%;
+    --primary: 213 90% 55%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 20% 20%;
+    --secondary-foreground: 210 20% 90%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 215 16% 60%;
+    --accent: 220 20% 18%;
+    --accent-foreground: 210 20% 95%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 213 90% 55%;
+    --radius: 0.5rem;
+    
+    /* Custom theme colors */
+    --nexus-bg: #0f1419;
+    --nexus-card: #1a1f2e;
+    --nexus-card-hover: #232a3d;
+    --nexus-border: #2a3344;
+    --nexus-text-primary: #e8eaed;
+    --nexus-text-secondary: #8b949e;
+    --nexus-accent-blue: #58a6ff;
+    --nexus-accent-green: #10b981;
+    --nexus-accent-yellow: #f59e0b;
+    --nexus-accent-red: #ef4444;
+    --nexus-accent-purple: #a855f7;
+    --nexus-accent-cyan: #06b6d4;
+    --nexus-gradient-start: #1a1f2e;
+    --nexus-gradient-end: #0f1419;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-nexus-bg text-nexus-text font-sans antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+}
+
+/* Dark scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1f2e;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #3d4556;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4d5566;
+}
+
+/* Glass morphism cards */
+.glass-card {
+  @apply bg-nexus-card backdrop-blur-xl border border-nexus-border rounded-xl;
+}
+
+.glass-card-hover {
+  @apply transition-all duration-200 hover:bg-nexus-card-hover hover:border-nexus-accent-blue/30;
+}
+
+/* KPI cards with gradient backgrounds */
+.kpi-card {
+  @apply relative overflow-hidden rounded-xl p-4 transition-all duration-200;
+}
+
+.kpi-card::before {
+  content: '';
+  @apply absolute inset-0 opacity-10;
+}
+
+.kpi-card-blue {
+  @apply bg-blue-500/10 border border-blue-500/20;
+}
+
+.kpi-card-green {
+  @apply bg-emerald-500/10 border border-emerald-500/20;
+}
+
+.kpi-card-yellow {
+  @apply bg-yellow-500/10 border border-yellow-500/20;
+}
+
+.kpi-card-red {
+  @apply bg-red-500/10 border border-red-500/20;
+}
+
+.kpi-card-purple {
+  @apply bg-purple-500/10 border border-purple-500/20;
+}
+
+/* Status indicator dot */
+.status-dot {
+  @apply w-2 h-2 rounded-full;
+}
+
+.status-dot-active {
+  @apply bg-emerald-500 shadow-lg shadow-emerald-500/50;
+  animation: pulse-glow 2s infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 16px rgba(16, 185, 129, 0.8);
+  }
+}
+
+/* Gradient header backgrounds */
+.header-gradient-purple {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+}
+
+.header-gradient-blue {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 50%, #60a5fa 100%);
+}
+
+.header-gradient-cyan {
+  background: linear-gradient(135deg, #0891b2 0%, #06b6d4 50%, #22d3ee 100%);
+}
+
+.header-gradient-red {
+  background: linear-gradient(135deg, #dc2626 0%, #ef4444 50%, #f87171 100%);
+}
+
+.header-gradient-green {
+  background: linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%);
+}
+
+/* Tab underline styles */
+.tab-underline {
+  @apply relative;
+}
+
+.tab-underline::after {
+  content: '';
+  @apply absolute bottom-0 left-0 w-full h-0.5 bg-nexus-accent-blue transform scale-x-0 transition-transform duration-200;
+}
+
+.tab-underline.active::after,
+.tab-underline:hover::after {
+  @apply scale-x-100;
+}
+
+/* Badge variants */
+.badge-critical {
+  @apply bg-red-500/20 text-red-400 border border-red-500/30;
+}
+
+.badge-high {
+  @apply bg-orange-500/20 text-orange-400 border border-orange-500/30;
+}
+
+.badge-medium {
+  @apply bg-yellow-500/20 text-yellow-400 border border-yellow-500/30;
+}
+
+.badge-low {
+  @apply bg-green-500/20 text-green-400 border border-green-500/30;
+}
+
+.badge-info {
+  @apply bg-blue-500/20 text-blue-400 border border-blue-500/30;
+}
+
+.badge-success {
+  @apply bg-emerald-500/20 text-emerald-400 border border-emerald-500/30;
+}
+
+/* Priority queue item */
+.queue-item {
+  @apply bg-nexus-card border border-nexus-border rounded-lg p-4 transition-all duration-200;
+}
+
+.queue-item:hover {
+  @apply bg-nexus-card-hover border-nexus-accent-blue/30;
+}
+
+/* Funnel chart styling */
+.funnel-bar {
+  @apply transition-all duration-300;
+}
+
+.funnel-bar:hover {
+  filter: brightness(1.1);
+}
+
+/* Chart tooltip */
+.recharts-tooltip-wrapper {
+  @apply !z-50;
+}
+
+.chart-tooltip {
+  @apply bg-nexus-card border border-nexus-border rounded-lg px-3 py-2 shadow-xl;
+}
+
+/* Sidebar navigation */
+.nav-item {
+  @apply flex items-center gap-3 px-4 py-2.5 rounded-lg text-nexus-text-muted transition-all duration-200;
+}
+
+.nav-item:hover {
+  @apply bg-nexus-card text-nexus-text;
+}
+
+.nav-item.active {
+  @apply bg-nexus-accent-blue/10 text-nexus-accent-blue border-l-2 border-nexus-accent-blue;
+}
+
+/* Loading skeleton dark */
+.skeleton-dark {
+  @apply animate-pulse bg-nexus-card rounded;
+}
+
+/* Table dark theme */
+.table-dark {
+  @apply bg-nexus-card border border-nexus-border rounded-lg overflow-hidden;
+}
+
+.table-dark th {
+  @apply bg-nexus-bg px-4 py-3 text-left text-sm font-medium text-nexus-text-muted border-b border-nexus-border;
+}
+
+.table-dark td {
+  @apply px-4 py-3 text-sm text-nexus-text border-b border-nexus-border;
+}
+
+.table-dark tr:hover td {
+  @apply bg-nexus-card-hover;
+}
+
+/* Input dark theme */
+.input-dark {
+  @apply bg-nexus-card border border-nexus-border rounded-lg px-4 py-2 text-nexus-text placeholder-nexus-text-muted focus:outline-none focus:ring-2 focus:ring-nexus-accent-blue focus:border-transparent;
+}
+
+/* Select dark theme */
+.select-dark {
+  @apply bg-nexus-card border border-nexus-border rounded-lg px-4 py-2 text-nexus-text focus:outline-none focus:ring-2 focus:ring-nexus-accent-blue;
+}
+
+/* Button variants */
+.btn-primary {
+  @apply bg-nexus-accent-blue text-white px-4 py-2 rounded-lg font-medium transition-all duration-300 hover:bg-blue-600 hover:shadow-[0_0_15px_rgba(88,166,255,0.4)] active:scale-95;
+}
+
+.btn-secondary {
+  @apply bg-nexus-card border border-nexus-border text-nexus-text px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:bg-nexus-card-hover;
+}
+
+.btn-success {
+  @apply bg-emerald-500 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:bg-emerald-600;
+}
+
+.btn-danger {
+  @apply bg-red-500 text-white px-4 py-2 rounded-lg font-medium transition-all duration-200 hover:bg-red-600;
+}
+
+/* Progress bar dark */
+.progress-dark {
+  @apply bg-nexus-border rounded-full overflow-hidden;
+}
+
+.progress-dark-bar {
+  @apply h-full rounded-full transition-all duration-500;
+}
+
+/* Donut chart center label */
+.donut-center-label {
+  @apply absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center;
+}
+
+/* Cascade node */
+.cascade-node {
+  @apply w-10 h-10 rounded-full flex items-center justify-center text-white font-medium text-sm transition-all duration-200;
+}
+
+.cascade-node:hover {
+  @apply scale-110;
+}
+
+/* Accordion dark */
+.accordion-dark {
+  @apply bg-nexus-card border border-nexus-border rounded-lg overflow-hidden;
+}
+
+.accordion-dark-header {
+  @apply flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-nexus-card-hover transition-colors;
+}
+
+/* Action button group */
+.action-btn-group {
+  @apply flex items-center gap-2;
+}
+
+.action-btn {
+  @apply w-8 h-8 flex items-center justify-center rounded-lg bg-nexus-card border border-nexus-border text-nexus-text-muted hover:text-nexus-text hover:bg-nexus-card-hover transition-all duration-200;
+}
+
+/* System sync badge */
+.sync-badge {
+  @apply flex items-center gap-2 px-3 py-1.5 rounded-lg bg-nexus-card border border-nexus-border;
+}
+
+.sync-badge-live {
+  @apply border-emerald-500/30;
+}
+
+/* Card section divider */
+.section-divider {
+  @apply border-t border-nexus-border my-4;
+}
+
+/* Metric trend indicator */
+.trend-up {
+  @apply text-emerald-400;
+}
+
+.trend-down {
+  @apply text-red-400;
+}
+
+.trend-neutral {
+  @apply text-nexus-text-muted;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .hide-mobile {
+    @apply hidden;
+  }
+}
+
+/* Animation utilities */
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}

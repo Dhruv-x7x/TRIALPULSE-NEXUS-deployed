@@ -1,0 +1,132 @@
+[
+  {
+    "query": "What are the requirements for informed consent?",
+    "results": [
+      {
+        "source": "ich_gcp",
+        "title": "Glossary",
+        "category": "",
+        "score": 0.6808826923370361,
+        "text_preview": "1.27 Informed Consent: A process by which a subject voluntarily confirms his or her willingness to participate in a particular trial, after having been informed of all aspects of the trial that are re"
+      },
+      {
+        "source": "protocol",
+        "title": "Monitoring Visit Report Requirements",
+        "category": "monitoring",
+        "score": 0.6338828802108765,
+        "text_preview": "1. ADMINISTRATIVE INFORMATION:\n- Visit date and type\n- Site identification\n- Monitor name and signature\n- Persons met\n- Previous visit date\n\n2. SUBJECT STATUS:\n- Enrolled subjects\n- Screen failures\n- "
+      },
+      {
+        "source": "ich_gcp",
+        "title": "Investigator",
+        "category": "",
+        "score": 0.6337012648582458,
+        "text_preview": "4.8.10 Both the informed consent discussion and the written informed consent form and any other written information to be provided to subjects should include explanations of the nature and purpose of "
+      }
+    ]
+  },
+  {
+    "query": "How should SAEs be reported?",
+    "results": [
+      {
+        "source": "ich_gcp",
+        "title": "Investigator",
+        "category": "",
+        "score": 0.659997284412384,
+        "text_preview": "4.11.1 All serious adverse events (SAEs) should be reported immediately to the sponsor except for those SAEs that the protocol or other document (e.g., Investigator's Brochure) identifies as not needi"
+      },
+      {
+        "source": "protocol",
+        "title": "SAE Reporting and Reconciliation",
+        "category": "safety",
+        "score": 0.6258013844490051,
+        "text_preview": "SAE REPORTING TIMELINE\n\n- Fatal/Life-threatening: Within 24 hours of awareness\n- Other SAEs: Within 24-72 hours per protocol\n- Follow-up reports: Within 24 hours of new information"
+      },
+      {
+        "source": "protocol",
+        "title": "SAE Reporting and Reconciliation",
+        "category": "safety",
+        "score": 0.5752261877059937,
+        "text_preview": "SAE REPORTING WORKFLOW\n\n1. Site identifies SAE\n2. Complete initial SAE form\n3. Submit to sponsor/safety team\n4. Enter in EDC (Data Management)\n5. Safety team reviews\n6. Regulatory reporting if require"
+      }
+    ]
+  },
+  {
+    "query": "What is the DQI?",
+    "results": [
+      {
+        "source": "protocol",
+        "title": "Data Quality Index (DQI) Management",
+        "category": "data_quality",
+        "score": 0.6944308876991272,
+        "text_preview": "DATA QUALITY INDEX (DQI) OVERVIEW\n\nThe Data Quality Index (DQI) is a composite score measuring overall data quality for clinical trial subjects. It ranges from 0-100, with higher scores indicating bet"
+      },
+      {
+        "source": "protocol",
+        "title": "Data Quality Index (DQI) Management",
+        "category": "data_quality",
+        "score": 0.6283048391342163,
+        "text_preview": "DQI BANDS\n\n- Pristine (95-100): Exceptional quality, ready for lock\n- Excellent (85-95): Minor issues only\n- Good (75-85): Some attention needed\n- Fair (65-75): Significant issues present\n- Poor (50-6"
+      },
+      {
+        "source": "protocol",
+        "title": "Data Quality Index (DQI) Management",
+        "category": "data_quality",
+        "score": 0.5215292572975159,
+        "text_preview": "DQI MULTIPLIERS\n\n- Age Multiplier: Issues older than 30 days receive 1.6x penalty\n- Criticality Multiplier: Safety issues receive 1.5x penalty\n- Trend Multiplier: Worsening trends receive 1.25x penalt"
+      }
+    ]
+  },
+  {
+    "query": "What are CRA responsibilities?",
+    "results": [
+      {
+        "source": "sop",
+        "title": "Data Entry and Verification Procedures",
+        "category": "data_management",
+        "score": 0.6073524355888367,
+        "text_preview": "2.3 CRA:\n- Perform source data verification\n- Identify data discrepancies\n- Document findings in monitoring reports\n- Follow up on outstanding issues\n\n3. PROCEDURES"
+      },
+      {
+        "source": "protocol",
+        "title": "Site Issue Escalation Procedures",
+        "category": "site_management",
+        "score": 0.5528828501701355,
+        "text_preview": "LEVEL 1: CRA MANAGEMENT (Days 1-7)\nTriggers:\n- Minor data quality issues\n- Routine query aging\n- Minor compliance gaps\n\nActions:\n- Document in visit report\n- Discuss with site coordinator\n- Provide tr"
+      },
+      {
+        "source": "ich_gcp",
+        "title": "Glossary",
+        "category": "",
+        "score": 0.5341091752052307,
+        "text_preview": "1.19 Contract Research Organization (CRO): A person or an organization (commercial, academic, or other) contracted by the sponsor to perform one or more of a sponsor's trial-related duties and functio"
+      }
+    ]
+  },
+  {
+    "query": "How to prepare for database lock?",
+    "results": [
+      {
+        "source": "protocol",
+        "title": "Database Lock Readiness Assessment",
+        "category": "database_lock",
+        "score": 0.7457129955291748,
+        "text_preview": "DB LOCK PROCESS\n\n1. Pre-Lock Activities:\n   - Complete all data entry\n   - Resolve all queries\n   - Complete SDV and signatures\n   - Reconcile external data\n   - Freeze subject data\n\n2. Data Review:\n "
+      },
+      {
+        "source": "protocol",
+        "title": "Database Lock Readiness Assessment",
+        "category": "database_lock",
+        "score": 0.7130898237228394,
+        "text_preview": "DATABASE LOCK READINESS ASSESSMENT\n\nDatabase lock is the point at which clinical trial data is frozen for statistical analysis. Proper preparation is critical for data integrity and regulatory complia"
+      },
+      {
+        "source": "sop",
+        "title": "Database Lock Procedures",
+        "category": "data_management",
+        "score": 0.6879429817199707,
+        "text_preview": "3.2 Lock Execution\na) Verify pre-lock checklist complete\nb) Obtain lock approvals\nc) Execute soft lock (freeze)\nd) Perform final data review\ne) Execute hard lock\nf) Generate lock documentation\ng) Arch"
+      }
+    ]
+  }
+]
