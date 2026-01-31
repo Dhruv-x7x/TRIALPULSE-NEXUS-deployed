@@ -435,7 +435,17 @@ def setup_frontend():
     
     if not node_modules.exists():
         print_step("📦", "Installing frontend dependencies...")
-        subprocess.run(["npm", "install"], cwd=FRONTEND_DIR, check=True)
+        try:
+            subprocess.run(
+                ["npm", "install"], 
+                cwd=FRONTEND_DIR, 
+                check=True,
+                shell=is_windows()  # npm needs shell on Windows
+            )
+        except FileNotFoundError:
+            print_error("npm not found. Please install Node.js from https://nodejs.org/")
+            print("   After installing, restart your terminal and run again.")
+            return False
     else:
         print_step("✓", "Frontend dependencies already installed")
     
