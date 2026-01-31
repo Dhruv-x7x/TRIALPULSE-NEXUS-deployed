@@ -13,29 +13,12 @@ This is submission by Team PARZIVAL (Riyaz, Dhruv, Preetam) for the NOVA AI Hack
 - **Neo4j** (Optional)
 - **Ollama** (Optional)
 
-## 🚀 Quick Start
-
-### Option 1: One-Command Launch (Recommended)
-```bash
-python run.py
-```
-This auto-detects your environment and starts everything.
-
-### Option 2: Choose Your Database Mode
-```bash
-python run.py --docker        # Use Docker for PostgreSQL (no local install needed)
-python run.py --local         # Use local PostgreSQL installation
-python run.py --frontend-only # Just run the UI (for preview)
-python run.py --skip-db       # Skip database setup (use existing data)
-```
-
-> [!TIP]
-> **No PostgreSQL installed?** Use `--docker` - it will automatically start PostgreSQL in a container.
-
 > [!WARNING]
 > **First-time installation may take 10-15 minutes** depending on your network speed and storage. The full dependency installation is **~10GB** (Python ML libraries + Node modules). Ensure you have sufficient disk space and a stable internet connection.
 
-## ⚙️ Setup
+---
+
+## 🚀 Quick Start (Manual Setup)
 
 ### 1. Environment Configuration
 ```bash
@@ -52,6 +35,80 @@ database/reproduction_dump.sql
 ```
 📥 **[Download Database Dump](https://drive.google.com/file/d/1rurYOMNUhG6ncy-e7EI7jDXl6NU9y_K2/view?usp=sharing)** (~212 MB)
 
+### 3. Database Setup
+```bash
+# Using Docker (recommended):
+docker run -d --name trialpulse-postgres -p 5432:5432 \
+  -e POSTGRES_PASSWORD=chitti \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=trialpulse_test \
+  postgres:16
+
+# Wait for PostgreSQL to start, then restore dump:
+docker cp database/reproduction_dump.sql trialpulse-postgres:/tmp/dump.sql
+docker exec trialpulse-postgres psql -U postgres -d trialpulse_test -f /tmp/dump.sql -q
+```
+
+Or use local PostgreSQL:
+```bash
+python setup_repro_db.py
+```
+
+### 4. Backend Setup
+```bash
+cd backend
+python -m venv venv
+
+# Windows:
+.\venv\Scripts\activate
+
+# macOS/Linux:
+source venv/bin/activate
+
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### 5. Frontend Setup (new terminal)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### 6. Access the Application
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://127.0.0.1:8000
+- **API Docs:** http://127.0.0.1:8000/docs
+
+---
+
+## 🤖 Unified Launcher (Alternative)
+
+If you prefer a one-command setup:
+
+```bash
+python run.py                 # Auto-detect best mode
+python run.py --docker        # Use Docker for PostgreSQL
+python run.py --local         # Use local PostgreSQL
+python run.py --frontend-only # Just run the UI (for preview)
+python run.py --skip-db       # Skip database setup
+```
+
+> [!TIP]
+> **No PostgreSQL installed?** Use `--docker` - it will automatically start PostgreSQL in a container.
+
+**What `run.py` does:**
+1. ✅ Checks Python, Node.js, and database availability
+2. ✅ Creates Python virtual environment (if needed)
+3. ✅ Installs all dependencies (pip + npm)
+4. ✅ Sets up the database with 57,974 patient records
+5. ✅ Starts backend API on `http://127.0.0.1:8000`
+6. ✅ Starts frontend on `http://localhost:5173`
+7. ✅ Handles graceful shutdown with Ctrl+C
+
+---
+
 ## 📊 Model Weights & Research
 
 All ML model weights (including fine-tuned models), research notebooks, and result plots are available at:
@@ -63,44 +120,6 @@ All ML model weights (including fine-tuned models), research notebooks, and resu
 Full technical documentation is included in this repository:
 
 📄 **[Documentation.pdf](./Documentation.pdf)** - Complete 6-module technical documentation
-
-## 📦 What `run.py` Does
-
-1. ✅ Checks Python, Node.js, and database availability
-2. ✅ Creates Python virtual environment (if needed)
-3. ✅ Installs all dependencies (pip + npm)
-4. ✅ Sets up the database with 57,974 patient records
-5. ✅ Starts backend API on `http://127.0.0.1:8000`
-6. ✅ Starts frontend on `http://localhost:5173`
-7. ✅ Handles graceful shutdown with Ctrl+C
-
----
-
-## 🔧 Manual Setup (Alternative)
-
-If you prefer manual setup over the launcher:
-
-### 1. Database Setup
-```bash
-python setup_repro_db.py
-```
-
-### 2. Backend
-```bash
-cd backend
-python -m venv venv
-# Windows: .\venv\Scripts\activate
-# macOS/Linux: source venv/bin/activate
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload
-```
-
-### 3. Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
 
 ---
 
