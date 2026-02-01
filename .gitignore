@@ -52,8 +52,12 @@ frontend/dist/
 *.bundle.js.map
 
 # ----- Database -----
-database/
-*.sql
+# Only ignore root database folder (contains large SQL dumps)
+/database/
+/database/*.sql
+
+# Explicitly track src/database/ (contains Python code)
+!src/database/
 
 # ----- IDE & Editors -----
 .vscode/

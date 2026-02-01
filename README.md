@@ -1,4 +1,4 @@
-# TrialPulse Nexus
+# TrialPlus Nexus
 
 <img width="1683" height="800" alt="executive1" src="https://github.com/user-attachments/assets/c6e61270-bfe7-489a-8bb5-e4ce99137b12" />
 
@@ -21,6 +21,19 @@ This is submission by Team PARZIVAL (Riyaz, Dhruv, Preetam) for the NOVA AI Hack
 
 ---
 
+## 🔑 Free API Key (Shared)
+
+We're providing a free Groq API key for evaluation purposes:
+
+```
+GROQ_API_KEY=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
+```
+
+> [!TIP]
+> This is a shared key for hackathon judges and evaluators. For production use, please get your own key at [console.groq.com](https://console.groq.com).
+
+---
+
 ## 🚀 Quick Start (Manual Setup)
 
 ### 1. Environment Configuration
@@ -29,7 +42,7 @@ cp .env.example .env
 ```
 Edit `.env` and set:
 - `DB_PASSWORD` - Your PostgreSQL password
-- `GROQ_API_KEY` - For cloud AI features (get one at [console.groq.com](https://console.groq.com))
+- `GROQ_API_KEY` - Use the shared key above or get one at [console.groq.com](https://console.groq.com)
 
 ### 2. Download Database (Required)
 Download the database dump and place it in the `database/` folder:
@@ -41,15 +54,15 @@ database/reproduction_dump.sql
 ### 3. Database Setup
 ```bash
 # Using Docker (recommended):
-docker run -d --name trialpulse-postgres -p 5432:5432 \
+docker run -d --name trialplus-postgres -p 5432:5432 \
   -e POSTGRES_PASSWORD=chitti \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_DB=trialpulse_test \
   postgres:16
 
 # Wait for PostgreSQL to start, then restore dump:
-docker cp database/reproduction_dump.sql trialpulse-postgres:/tmp/dump.sql
-docker exec trialpulse-postgres psql -U postgres -d trialpulse_test -f /tmp/dump.sql -q
+docker cp database/reproduction_dump.sql trialplus-postgres:/tmp/dump.sql
+docker exec trialplus-postgres psql -U postgres -d trialpulse_test -f /tmp/dump.sql -q
 ```
 
 Or use local PostgreSQL:
@@ -116,7 +129,7 @@ python run.py --skip-db       # Skip database setup
 
 All ML model weights (including fine-tuned models), research notebooks, and result plots are available at:
 
-🔗 **[trialpulse_nexus Repository](https://github.com/PARZIVALPRIME/trialpulse_nexus)**
+🔗 **[trialplus_nexus Repository](https://github.com/PARZIVALPRIME/trialpulse_nexus)**
 
 ## 📚 Documentation
 
@@ -148,9 +161,8 @@ python scripts/run_drift_monitor.py
 
 ### Local AI Model (Ollama)
 ```bash
-ollama create trialpulse-nexus -f Modelfile
+ollama create trialplus-nexus -f Modelfile
 ```
 
 ---
-**TrialPulse Nexus**
-
+**TrialPlus Nexus**
