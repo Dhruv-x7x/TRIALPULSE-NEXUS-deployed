@@ -34,7 +34,7 @@ GROQ_API_KEY=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
 
 ---
 
-## 🚀 Quick Start (Manual Setup)
+## 🚀 Quick Start (Unified Launcher)
 
 ### 1. Environment Configuration
 ```bash
@@ -51,58 +51,7 @@ database/reproduction_dump.sql
 ```
 📥 **[Download Database Dump](https://drive.google.com/file/d/1rurYOMNUhG6ncy-e7EI7jDXl6NU9y_K2/view?usp=sharing)** (~212 MB)
 
-### 3. Database Setup
-```bash
-# Using Docker (recommended):
-docker run -d --name trialplus-postgres -p 5432:5432 \
-  -e POSTGRES_PASSWORD=chitti \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_DB=trialpulse_test \
-  postgres:16
-
-# Wait for PostgreSQL to start, then restore dump:
-docker cp database/reproduction_dump.sql trialplus-postgres:/tmp/dump.sql
-docker exec trialplus-postgres psql -U postgres -d trialpulse_test -f /tmp/dump.sql -q
-```
-
-Or use local PostgreSQL:
-```bash
-python setup_repro_db.py
-```
-
-### 4. Backend Setup
-```bash
-cd backend
-python -m venv venv
-
-# Windows:
-.\venv\Scripts\activate
-
-# macOS/Linux:
-source venv/bin/activate
-
-pip install -r requirements.txt
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
-```
-
-### 5. Frontend Setup (new terminal)
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 6. Access the Application
-- **Frontend:** http://localhost:5173
-- **Backend API:** http://127.0.0.1:8000
-- **API Docs:** http://127.0.0.1:8000/docs
-
----
-
-## 🤖 Unified Launcher (Alternative)
-
-If you prefer a one-command setup:
-
+### 3. Run the Application
 ```bash
 python run.py                 # Auto-detect best mode
 python run.py --docker        # Use Docker for PostgreSQL
@@ -122,6 +71,61 @@ python run.py --skip-db       # Skip database setup
 5. ✅ Starts backend API on `http://127.0.0.1:8000`
 6. ✅ Starts frontend on `http://localhost:5173`
 7. ✅ Handles graceful shutdown with Ctrl+C
+
+### 4. Access the Application
+- **Frontend:** http://localhost:5173
+- **Backend API:** http://127.0.0.1:8000
+- **API Docs:** http://127.0.0.1:8000/docs
+
+---
+
+## 🛠️ Manual Setup (Alternative)
+
+<details>
+<summary>Click to expand manual setup instructions</summary>
+
+### Database Setup
+```bash
+# Using Docker:
+docker run -d --name trialplus-postgres -p 5432:5432 \
+  -e POSTGRES_PASSWORD=chitti \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=trialpulse_test \
+  postgres:16
+
+# Wait for PostgreSQL to start, then restore dump:
+docker cp database/reproduction_dump.sql trialplus-postgres:/tmp/dump.sql
+docker exec trialplus-postgres psql -U postgres -d trialpulse_test -f /tmp/dump.sql -q
+```
+
+Or use local PostgreSQL:
+```bash
+python setup_repro_db.py
+```
+
+### Backend Setup
+```bash
+cd backend
+python -m venv venv
+
+# Windows:
+.\venv\Scripts\activate
+
+# macOS/Linux:
+source venv/bin/activate
+
+pip install -r requirements.txt
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+### Frontend Setup (new terminal)
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+</details>
 
 ---
 
